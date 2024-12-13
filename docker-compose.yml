@@ -1,0 +1,33 @@
+services:
+  # api:
+  #   build: .
+  #   container_name: oja-api
+  #   ports:
+  #     - 5000:5000
+  #   command: "npm start"
+
+  oja-mongodb:
+    container_name: oja-mongodb
+    image: mongo
+    restart: always
+    command: "mongod --port 27044"
+    ports:
+      - "27044:27044"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: Rotimi0512
+    volumes:
+      - ./data:/data/db
+
+  oja-mongo-express:
+    container_name: oja-mongo-express
+    image: mongo-express
+    restart: always
+    ports:
+      - 8082:8082
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: Rotimi0512
+      ME_CONFIG_MONGODB_URL: mongodb://root:Rotimi0512@localhost:2744/
+      ME_CONFIG_BASICAUTH: false
+      
