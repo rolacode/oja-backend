@@ -6,15 +6,12 @@ const Location = require('../../models/Location')
 const bodyParser = require("body-parser");
 const config = require('../../config/config');
 const jwt = require('jsonwebtoken');
-const connectDB = require('../../db');
+const connect1DB = require('../../db');
 const bcrypt = require('bcrypt');
 const Dispute = require('../../models/Dispute');
 const Vendor1 = require('../../models/Vendor1');
 
-
-connectDB();
-
-
+connect1DB();
 
 // @desc Create Vendor
 // @route POST /v1/vendors
@@ -24,74 +21,56 @@ const createVendorHandler = async (req, res) => {
     const { businessName, email, password, confirmPassword, location, nin } = req.body;
 
     if (typeof businessName !== "string") {
-      return res.status(400).json({
-        message: "Businessname must be a string",
-      });
+      return res.status(400).json({ message: "Business name must be a string" });
     }
 
     if (typeof email !== "string") {
-      return res.status(400).json({
-        message: "Email must be a string",
-      });
+      return res.status(400).json({ message: "Email must be a string" });
     }
 
-    if (typeof password !== "string") {
-      return res.status(400).json({
-        message: "Password must be a string",
-      });
+    if (!/\S+@\S+\.\S+/.test(email)) {
+      return res.status(400).json({ message: "Email is invalid" });
+    }
+
+    if (password !== confirmPassword) {
+      return res.status(400).json({ message: "Passwords do not match" });
     }
 
     if (password.length < 8) {
-      return res.status(400).json({
-        message: "Password must be at least 8 characters",
-      });
-    } 
-
-    if (typeof confirmPassword !== "string") {
-      return res.status(400).json({
-        message: "confirm password must be a string",
-      });
+      return res.status(400).json({ message: "Password must be at least 8 characters" });
     }
 
-    if (confirmPassword.length < 8) {
-      return res.status(400).json({
-        message: "confirm Password must be at least 8 characters",
-      });
-    } 
-
-    if (typeof nin !== 'number') {
-      return res.status(400).json({
-        message: "NiN must be a number",
-      });
+    if (
+      !Array.isArray(location?.coordinates) ||
+      location.coordinates.length !== 2 ||
+      location.coordinates.some((coord) => typeof coord !== 'number' || isNaN(coord))
+    ) {
+      return res.status(400).json({ message: "Location must be an array with [latitude, longitude]" });
     }
 
-    if (nin.length < 11) {
-      return res.status(400).json({
-        message: "Password must be at least 11 numbers",
-      });
+    if (typeof nin !== "string" || !/^\d{11}$/.test(nin)) {
+      return res.status(400).json({ message: "NIN must be exactly 11 digits" });
     }
-    
+
     const hashedPassword = await bcrypt.hash(password, 10);
-    const vendor = await Vendor1.insertMany({ 
-      businessName, 
-      email, 
-      password: hashedPassword, 
-      confirmPassword: hashedPassword,
+    const vendor = await Vendor1.create({
+      businessName,
+      email,
+      password: hashedPassword,
       location: {
         type: 'Point',
         coordinates: location.coordinates,
       },
-      nin, 
+      nin,
     });
 
     return res.status(201).json(vendor);
 
   } catch (error) {
-    res.status(500).json({
-      message: error.message,
-    });
+    res.status(500).json({ message: error.message });
   }
 };
+
 
 // @desc Retrieve User
 // @route GET /v1/users/

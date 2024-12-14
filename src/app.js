@@ -10,17 +10,19 @@ const categoryRoutes = require('../routes/v1/categoryRoutes');
 const resetPasswordRoutes = require('../routes/v1/resetPasswordRoutes');
 const locationRoutes = require('../routes/v1/locationRoutes');
 const helmet = require('helmet');
+const connect1DB = require('../db');
+
 
 const app = express();
 app.use(bodyParser.json());
 
 //middleware
-const corsOptions = {
-    origin: 'https://localhost:3000',
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    // Credential: true,
-}
-app.use(cors());
+// const corsOptions = {
+//     origin: 'https://localhost:3000',
+//     methods: ['GET', 'POST', 'PUT', 'DELETE'],
+//     Credential: true,
+// }
+app.use(cors({ origin: 'http://localhost:3000', credentials: true }));
 app.use(express.json());
 
 // API Routes

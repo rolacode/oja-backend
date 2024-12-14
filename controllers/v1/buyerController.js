@@ -4,10 +4,10 @@ const Dispute = require('../../models/Dispute');
 const Location = require('../../models/Location');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const connectDB = require('../../db');
+const connect1DB = require('../../db');
 
 
-connectDB();
+connect1DB();
 
 // Register Buyer
 const registerBuyerHandler = async (req, res) => {
