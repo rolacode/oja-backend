@@ -2,7 +2,7 @@ const express = require('express');
 const VendorListing = require('../../models/VendorListing')
 const config = require('../../config/config');
 const jwt = require('jsonwebtoken');
-const connect1DB = require('../../db');
+// const connect1DB = require('../../db');
 const bcrypt = require('bcrypt');
 const Dispute = require('../../models/Dispute');
 const Location = require('../../models/Location');
@@ -11,7 +11,7 @@ const Vendor1 = require('../../models/Vendor1');
 const Buyer = require('../../models/Buyer');
 const Message = require('../../models/Message');
 
-connect1DB();
+// connect1DB();
 
 
 
@@ -426,7 +426,7 @@ const getBuyerHandler = async (req, res) => {
     const buyer = await Buyer.findById(req.params.id);
     if (!buyer) {
       return res.status(404).json({
-        message: "Vendor not found",
+        message: "Buyer not found",
       });
     }
 

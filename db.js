@@ -2,10 +2,7 @@ const mongoose = require('mongoose');
 
 const connect1DB = async () => {
   try {
-    const conn = await mongoose.connect("mongodb://root:Rotimi0512@localhost:27044/oja?authSource=admin", {
-      useNewUrlParser: true, // Optional for Mongoose 6+
-      useUnifiedTopology: true, // Optional for Mongoose 6+
-    });
+    const conn = await mongoose.connect("mongodb://root:Rotimi0512@localhost:27044/oja?authSource=admin");
 
     console.log(`MongoDB Connected: ${conn.connection.host}`);
   } catch (err) {

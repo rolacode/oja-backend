@@ -15,14 +15,20 @@ const connect1DB = require('../db');
 
 const app = express();
 app.use(bodyParser.json());
+connect1DB();
 
 //middleware
 // const corsOptions = {
-//     origin: 'https://localhost:3000',
+//     origin: 'http://localhost:3000',
 //     methods: ['GET', 'POST', 'PUT', 'DELETE'],
 //     Credential: true,
 // }
-app.use(cors({ origin: 'http://localhost:3000', credentials: true }));
+// app.use(cors(corsOptions));
+app.use(cors({
+    origin: 'http://localhost:3000', // Frontend URL
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true
+  }));
 app.use(express.json());
 
 // API Routes

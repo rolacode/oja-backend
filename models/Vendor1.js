@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 
-const vendorSchema = new mongoose.Schema({
+const vendor1Schema = new mongoose.Schema({
   businessName: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
@@ -9,10 +9,12 @@ const vendorSchema = new mongoose.Schema({
     type: { type: String, default: 'Point' },
     coordinates: { type: [Number], required: true },
   },
-  nin: { type: Number, required: true},
+  nin: { type: String, required: true},
+}, {
+  timestamps: true
 });
 
-vendorSchema.index({ location: '2dsphere' });
+vendor1Schema.index({ location: '2dsphere' });
 
-module.exports = mongoose.model('Vendor', vendorSchema);
+module.exports = mongoose.model('Vendor1', vendor1Schema);
 

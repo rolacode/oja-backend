@@ -1,8 +1,8 @@
 const mongoose = require('mongoose');
 
 const messageSchema = new mongoose.Schema({
-    senderId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    recipientId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    senderId: { type: mongoose.Schema.Types.ObjectId, ref: 'Buyer' },
+    recipientId: { type: mongoose.Schema.Types.ObjectId, ref: 'Buyer' },
     text: String,
     timestamp: { type: Date, default: Date.now },
   });

@@ -1,10 +1,8 @@
-const jwt = require('jsonwebtoken');
-const Vendor1 = require('../models/Vendor1');
+const jwt = require('jsonwebtoken')
+const Vendor1 = require('../models/Vendor1') // Adjust path based on your setup
 const config = require('../config/config');
 
-
-
-const validateToken1 = async (req, res, next) => {
+const authenticateVendor = async (req, res, next) => {
     try {
         if (!req.headers.authorization) {
             return res.status(401).json({
@@ -43,4 +41,4 @@ const validateToken1 = async (req, res, next) => {
     }
 };
 
-module.exports = validateToken1;
+module.exports = authenticateVendor

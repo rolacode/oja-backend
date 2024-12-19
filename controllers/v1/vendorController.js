@@ -2,16 +2,18 @@ const express = require('express');
 const mongoose = require('mongoose');
 const Order = require('../../models/Order');
 const Product = require('../../models/Product');
-const Location = require('../../models/Location')
+const Category = require('../../models/Category');
+const Location = require('../../models/Location');
 const bodyParser = require("body-parser");
 const config = require('../../config/config');
 const jwt = require('jsonwebtoken');
-const connect1DB = require('../../db');
+// const connect1DB = require('../../db');
 const bcrypt = require('bcrypt');
 const Dispute = require('../../models/Dispute');
 const Vendor1 = require('../../models/Vendor1');
+const Buyer = require('../../models/Buyer');
 
-connect1DB();
+// connect1DB();
 
 // @desc Create Vendor
 // @route POST /v1/vendors
@@ -30,6 +32,12 @@ const createVendorHandler = async (req, res) => {
 
     if (!/\S+@\S+\.\S+/.test(email)) {
       return res.status(400).json({ message: "Email is invalid" });
+    }
+
+    if (typeof password !== "string") {
+      return res.status(400).json({
+        message: "Password must be a string",
+      });
     }
 
     if (password !== confirmPassword) {
@@ -71,39 +79,50 @@ const createVendorHandler = async (req, res) => {
   }
 };
 
-
 // @desc Retrieve User
 // @route GET /v1/users/
 // // @access Public
 const getProductsByNameHandler = async (req, res) => {
   try {
-    let { search } = req.query;
+    const { search } = req.query;
 
+    let products;
     if (search) {
       if (typeof search !== "string") {
         return res.status(400).json({ message: "Search must be a string" });
       }
 
-      const product = await Product.find({
+      products = await Product.find({
         where: {
           name: {
             [Op.like]: `%${search}%`,
           },
         },
       });
-      return res.status(200).json(product);
+    } else {
+      products = await Product.find();
     }
 
-    const products = await Product.find({});
-    res.status(200).json(products);
-    return;
+    // Assuming you want to paginate results:
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 10;
+    const totalProducts = products.length;
+    const totalPages = Math.ceil(totalProducts / limit);
 
+    // Slice products for the current page
+    const paginatedProducts = products.slice((page - 1) * limit, page * limit);
+
+    res.status(200).json({
+      products: paginatedProducts,
+      totalPages,
+    });
   } catch (error) {
     res.status(500).json({
       message: error.message,
     });
   }
 };
+
 
 // @desc Update Vendors
 // @route PUT /v1/vendors/:id
@@ -210,19 +229,51 @@ const createProductHandler = async (req, res) => {
     }
 };
 
-// @desc Retrieve Products
-// @route GET /v1/vendors/product
+// @desc Fetch All Products with Pagination and Filters
+// @route GET /v1/vendors
 // @access Public
-const getProductsHandler = async (req, res) => {
+const getAllProductsHandler = async (req, res) => {
   try {
-      const products = await Product.find();
-      res.status(200).json(products);
+    const { page = 1, limit = 10, category, vendor } = req.query;
+
+    // Parse limit and page to integers
+    const parsedLimit = parseInt(limit, 10);
+    const parsedPage = parseInt(page, 10);
+
+    // Filters for querying the database
+    const filter = {};
+    if (category) filter.categoryId = category;
+    if (vendor) filter.vendorId = vendor;
+
+    // Pagination logic
+    const skip = (parsedPage - 1) * parsedLimit;
+
+    // Fetch products with filters, pagination, and population
+    const products = await Product.find(filter)
+      .populate('vendorId', 'businessName') // Populate vendor details
+      .populate('categoryId', 'name') // Populate category details
+      .skip(skip)
+      .limit(parsedLimit);
+
+    // Count total matching products
+    const total = await Product.countDocuments(filter);
+
+    // Respond with paginated products and metadata
+    res.status(200).json({
+      total,
+      page: parsedPage,
+      limit: parsedLimit,
+      totalPages: Math.ceil(total / parsedLimit),
+      products,
+    });
   } catch (error) {
-      res.status(500).json({
-          message: error.message,
-      });
+    // Catch and return any server error
+    res.status(500).json({ error: error.message });
   }
 };
+
+
+
     
 // @desc Retrieve User-sales
 // @route GET /v1/vendors/sales/:vendorId
@@ -285,7 +336,7 @@ const getOrdersHandler = async (req, res) => {
 // @access Public
 const getBuyerHandler = async (req, res) => {
   try {
-    const buyer = await Buyer.findById(req.params.id);
+    const buyer = await new Buyer.findById(req.params.id);
     if (!buyer) {
       return res.status(404).json({
         message: "Vendor not found",
@@ -324,7 +375,7 @@ const analyticBuyersHandler = async (req, res) => {
     loginVendorHandler,
     deleteProductHandler,
     createProductHandler,
-    getProductsHandler,
+    getAllProductsHandler,
     getSalesHandler,
     getEarningsHandler,
     getProductHandler,

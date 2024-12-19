@@ -38,9 +38,9 @@ router.get('/transactions', validateToken, buyerTransactionsHandler);
 router.get('/analytics', validateToken, analyticBuyersHandler);
 router.get('/analytics/vendorId', validateToken, analyticVendorsHandler);
 router.get('/user-growth', vendorGrowthHandler);
-router.get('/', validateToken, getAllBuyersHandler);
-router.get('/', validateToken, getBuyerHandler);
-router.get('/', validateToken, deleteBuyerHandler);
+router.get('/buyers', validateToken, getAllBuyersHandler);
+router.get('/buyer/:id', validateToken, getBuyerHandler);
+router.delete('/buyer/:id', validateToken, deleteBuyerHandler);
 router.put('/disputes/:disputeId',validateToken, updateBuyersDisputeHandler);
 router.post('/notification', validateToken, createAdminNotificationHandler);
 

@@ -4,22 +4,22 @@ const Dispute = require('../../models/Dispute');
 const Location = require('../../models/Location');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const connect1DB = require('../../db');
+// const connect1DB = require('../../db');
 
 
-connect1DB();
+// connect1DB();
 
 // Register Buyer
 const registerBuyerHandler = async (req, res) => {
   try {
-    const { firstname, lastname, email, password, location } = req.body;
-    if (typeof firstname !== "string") {
+    const { firstName, lastName, email, password, confirmPassword } = req.body;
+    if (typeof firstName !== "string") {
         return res.status(400).json({
           message: "Name must be a string",
         });
       }
 
-      if (typeof lastname !== "string") {
+      if (typeof lastName !== "string") {
         return res.status(400).json({
           message: "Name must be a string",
         });
@@ -36,6 +36,10 @@ const registerBuyerHandler = async (req, res) => {
           message: "Password must be a string",
         });
       }
+
+      if (password !== confirmPassword) {
+        return res.status(400).json({ message: "Passwords do not match" });
+      }
   
       if (password.length < 8) {
         return res.status(400).json({
@@ -45,14 +49,11 @@ const registerBuyerHandler = async (req, res) => {
       
     const hashedPassword = await bcrypt.hash(password, 10);
     const buyer = await Buyer.insertMany({
-      firstname,
-      lastname,
+      firstName,
+      lastName,
       email, 
-      password: hashedPassword, 
-      location: {
-        type: 'Point',
-        coordinates: location.coordinates,
-      }, 
+      password: hashedPassword,
+      confirmPassword: hashedPassword,
     });
 
     return res.status(201).json({ message: 'Buyer registered successfully!', buyer});

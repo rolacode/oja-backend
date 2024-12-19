@@ -1,15 +1,14 @@
 const mongoose = require('mongoose');
 
 const buyerSchema = new mongoose.Schema({
-  firstname: { type: String, required: true },
-  lastname: { type: String, required: true },
+  firstName: { type: String, required: true },
+  lastName: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  location: {
-    type: { type: String, default: 'Point' },
-    coordinates: { type: [Number], required: true }, // [longitude, latitude]
-  },
+  confirmPassword: { type: String, required: true},
   orders: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Order' }],
+}, {
+  timestamps: true
 });
 
 buyerSchema.index({ location: '2dsphere' }); // Enable geospatial queries

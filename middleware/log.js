@@ -1,7 +1,7 @@
 const logActivity = async (req, res, next) => {
     try {
       await Log.create({
-        userId: req.user._id,
+        BuyerId: req.user._id,
         action: req.method + ' ' + req.path,
         details: req.body,
       });
