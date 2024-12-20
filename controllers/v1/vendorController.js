@@ -236,41 +236,33 @@ const getAllProductsHandler = async (req, res) => {
   try {
     const { page = 1, limit = 10, category, vendor } = req.query;
 
-    // Parse limit and page to integers
-    const parsedLimit = parseInt(limit, 10);
-    const parsedPage = parseInt(page, 10);
-
-    // Filters for querying the database
     const filter = {};
     if (category) filter.categoryId = category;
     if (vendor) filter.vendorId = vendor;
 
-    // Pagination logic
-    const skip = (parsedPage - 1) * parsedLimit;
+    const skip = (page - 1) * limit;
 
-    // Fetch products with filters, pagination, and population
     const products = await Product.find(filter)
       .populate('vendorId', 'businessName') // Populate vendor details
       .populate('categoryId', 'name') // Populate category details
       .skip(skip)
-      .limit(parsedLimit);
+      .limit(parseInt(limit));
 
-    // Count total matching products
     const total = await Product.countDocuments(filter);
 
-    // Respond with paginated products and metadata
+    // Ensure consistent response format
     res.status(200).json({
       total,
-      page: parsedPage,
-      limit: parsedLimit,
-      totalPages: Math.ceil(total / parsedLimit),
-      products,
+      page: parseInt(page),
+      limit: parseInt(limit),
+      totalPages: Math.ceil(total / limit),
+      products, // Ensure this is an array
     });
   } catch (error) {
-    // Catch and return any server error
     res.status(500).json({ error: error.message });
   }
 };
+
 
 
 

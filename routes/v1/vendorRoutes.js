@@ -20,13 +20,13 @@ const router = express.Router();
 
 router.post('', authenticateVendor, createProductHandler);
 router.get('/search', getProductsByNameHandler);
-router.get('/product', authenticateVendor, getAllProductsHandler)
+router.get('/product', getAllProductsHandler)
 router.get('/:id', authenticateVendor, getSalesHandler);
 router.get('/earning', authenticateVendor, getEarningsHandler);
 router.delete('/:id', authenticateVendor, deleteProductHandler);
-router.get('/:vendorId',authenticateVendor, getProductHandler);
-router.get('/:id',authenticateVendor, getOrdersHandler);
-router.get('/:id', authenticateVendor, getBuyerHandler);
+router.get('/:productId',authenticateVendor, getProductHandler);
+router.get('/:orderId',authenticateVendor, getOrdersHandler);
+router.get('', authenticateVendor, getBuyerHandler);
 //vendors operation
 router.post('/reg', createVendorHandler);
 router.put('/:id', updateVendorHandler);
