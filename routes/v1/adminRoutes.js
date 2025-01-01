@@ -26,8 +26,8 @@ const router = express.Router();
 
 router.post('', createAdminHandler);
 router.get('/:id', validateToken, getVendorHandler);
-router.get('', validateToken, getVendorsHandler);
-router.put('/:id', validateToken, updateVendorHandler);
+router.get('', getVendorsHandler);
+router.put('/:id', updateVendorHandler);
 router.patch('/:id', validateToken, updateAdminHandler);
 router.post('/login', loginAdminHandler);
 router.delete('/:id',validateToken, deleteVendorHandler);

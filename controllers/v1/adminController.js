@@ -68,7 +68,7 @@ const getVendorHandler = async (req, res) => {
         message: "Vendor not found",
       });
     }
-
+ 
     return res.status(200).json(vendor);
   } catch (error) {
     res.status(500).json({

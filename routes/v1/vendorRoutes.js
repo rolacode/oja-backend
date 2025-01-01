@@ -10,9 +10,10 @@ const {
     getSalesHandler,
     getEarningsHandler,
     getProductHandler,
-    getOrdersHandler,
+    getOrderHandler,
     getBuyerHandler, 
     analyticBuyersHandler,
+    getAllOrdersHandler
 } = require('../../controllers/v1/vendorController');
 const authenticateVendor = require('../../middleware/auth1');
 
@@ -22,11 +23,12 @@ router.post('', authenticateVendor, createProductHandler);
 router.get('/search', getProductsByNameHandler);
 router.get('/product', getAllProductsHandler)
 router.get('/:id', authenticateVendor, getSalesHandler);
-router.get('/earning', authenticateVendor, getEarningsHandler);
+router.get('/earning', getEarningsHandler);
 router.delete('/:id', authenticateVendor, deleteProductHandler);
 router.get('/:productId',authenticateVendor, getProductHandler);
-router.get('/:orderId',authenticateVendor, getOrdersHandler);
+router.get('/:orderId',authenticateVendor, getOrderHandler);
 router.get('', authenticateVendor, getBuyerHandler);
+router.get('/order', authenticateVendor, getAllOrdersHandler);
 //vendors operation
 router.post('/reg', createVendorHandler);
 router.put('/:id', updateVendorHandler);

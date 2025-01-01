@@ -165,7 +165,7 @@ const updateVendorHandler = async (req, res) => {
     }
     vendor.businessName = businessName;
     vendor.email = email;
-    await vendor.save({businessName, email});
+    await Vendor1.save({businessName, email});
     res.status(200).json(vendor);
   } catch (error) {
     res.status(500).json({
@@ -263,9 +263,6 @@ const getAllProductsHandler = async (req, res) => {
   }
 };
 
-
-
-
     
 // @desc Retrieve User-sales
 // @route GET /v1/vendors/sales/:vendorId
@@ -314,13 +311,16 @@ const getProductHandler = async (req, res) => {
 // @desc Retrieve Order
 // @route POST /v1/Vendors/:buyerId
 // @access Private
-const getOrdersHandler = async (req, res) => {
-    try {
-      const orders = await Order.find({ buyerId: req.params.buyerId }).populate('products');
-      res.json(orders);
-    } catch (error) {
-      res.status(500).json({ error: error.message });
+const getOrderHandler = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id).populate('buyerId vendorId products');
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
     }
+    res.status(200).json(order);
+  } catch (err) {
+      res.status(500).json({ error: err.message });
+  }
 };
 
 // @desc Retrieve Buyer
@@ -331,7 +331,7 @@ const getBuyerHandler = async (req, res) => {
     const buyer = await new Buyer.findById(req.params.id);
     if (!buyer) {
       return res.status(404).json({
-        message: "Vendor not found",
+        message: "buyer not found",
       });
     }
 
@@ -359,19 +359,37 @@ const analyticBuyersHandler = async (req, res) => {
   }
 };
 
+// @desc Retrieve Order
+// @route POST /v1/Vendors/order
+// @access Private
+const getAllOrdersHandler = async (req, res) => {
+  try {
+    const orders = await Order.find()
+      .populate({ path: 'buyerId', model: 'Buyer' })
+      .populate({ path: 'vendorId', model: 'Vendor1' })
+      .populate({ path: 'products', model: 'Product' });
+    res.status(200).json(orders);
+  } catch (err) {
+    console.error('Error retrieving orders:', err); // Log the full error
+    res.status(500).json({ error: err.message });
+  }
+};
 
-  module.exports = {
-    createVendorHandler,
-    getProductsByNameHandler,
-    updateVendorHandler,
-    loginVendorHandler,
-    deleteProductHandler,
-    createProductHandler,
-    getAllProductsHandler,
-    getSalesHandler,
-    getEarningsHandler,
-    getProductHandler,
-    getOrdersHandler,
-    getBuyerHandler,
-    analyticBuyersHandler,
-  };
+
+
+module.exports = {
+  createVendorHandler,
+  getProductsByNameHandler,
+  updateVendorHandler,
+  loginVendorHandler,
+  deleteProductHandler,
+  createProductHandler,
+  getAllProductsHandler,
+  getSalesHandler,
+  getEarningsHandler,
+  getProductHandler,
+  getOrderHandler,
+  getBuyerHandler,
+  analyticBuyersHandler,
+  getAllOrdersHandler,
+};

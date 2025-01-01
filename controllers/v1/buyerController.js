@@ -1,5 +1,6 @@
 const Buyer = require('../../models/Buyer');
 const Vendor1 = require('../../models/Vendor1');
+const Order = require('../../models/Order');
 const Dispute = require('../../models/Dispute');
 const Location = require('../../models/Location');
 const bcrypt = require('bcrypt');
@@ -88,8 +89,8 @@ const findNearbyVendorsHandler = async (req, res) => {
   }
 };
 
-// @desc Update Vendors
-// @route PUT /v1/vendors/:id
+// @desc Update Buyer
+// @route PUT /v1/Buyers/:id
 // @access Private
 const updateBuyerHandler = async (req, res) => {
     try {
@@ -234,8 +235,68 @@ const createBuyerDisputeHandler = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
-  
 
+// @desc Create Order
+// @route POST /v1/buyers/order
+// @access Public
+const createOrderHandler = async (req, res) => {
+  try {
+      const { buyerId, vendorId, product, status } = (req.body);
+      if (typeof buyerId !== "string") {
+          return res.status(400).json({
+            message: "BuyerId must be a string",
+          });
+      }
+
+      if (typeof vendorId !== "string") {
+          return res.status(400).json({
+            message: "VendorId must be a string",
+          });
+      }
+
+      if (typeof product !== "string") {
+          return res.status(400).json({
+            message: "Product must be a string",
+          });
+      }
+
+      const order = await Order.create({ buyerId, vendorId, product, status});
+      res.status(201).json(order);
+  } catch (err) {
+      res.status(500).json({ error: err.message });
+  }
+};
+
+// @desc Update Order
+// @route PUT /v1/buyers/:id
+// @access Private
+const updateOrderHandler = async (req, res) => {
+  try {
+      const updatedOrder = await Order.findByIdAndUpdate(req.params.id, req.body, { new: true });
+      if (!updatedOrder) {
+        return res.status(404).json({ error: 'Order not found' });
+      }
+      res.status(200).json(updatedOrder);
+  } catch (err) {
+      res.status(500).json({ error: err.message });
+  }
+};
+
+// @desc Delete Order
+// @route delete /v1/buyers/:id
+// @access Private
+const deleteOrderHandler = async (req, res) => {
+  try {
+    const deletedOrder = await Order.findByIdAndDelete(req.params.id);
+    if (!deletedOrder) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+    res.status(200).json({ message: 'Order deleted successfully' });
+  } catch (err) {
+      res.status(500).json({ error: err.message });
+  }
+};
+  
   
 
 module.exports = {
@@ -246,4 +307,7 @@ module.exports = {
     searchVendors1Handler,
     getVendorsLocationHandler,
     createBuyerDisputeHandler,
+    createOrderHandler,
+    updateOrderHandler,
+    deleteOrderHandler,
 };
