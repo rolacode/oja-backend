@@ -1,4 +1,5 @@
-const Buyer = require('../../models/Buyer');
+const Buyer = require('../../models/Buyer')
+const nodemailer = require('nodemailer');
 const Vendor1 = require('../../models/Vendor1');
 const Order = require('../../models/Order');
 const Dispute = require('../../models/Dispute');
@@ -10,25 +11,31 @@ const jwt = require('jsonwebtoken');
 
 // connect1DB();
 
-// Register Buyer
 const registerBuyerHandler = async (req, res) => {
   try {
     const { firstName, lastName, email, password, confirmPassword } = req.body;
     if (typeof firstName !== "string") {
         return res.status(400).json({
-          message: "Name must be a string",
+          message: "First Name must be a string",
         });
       }
 
       if (typeof lastName !== "string") {
         return res.status(400).json({
-          message: "Name must be a string",
+          message: "Last Name must be a string",
         });
       }
   
       if (typeof email !== "string") {
         return res.status(400).json({
           message: "Email must be a string",
+        });
+      }
+
+      const buyerExists = await Buyer.findOne({ email });
+      if (buyerExists) {
+        return res.status(400).json({
+          message: 'Buyer already exists',
         });
       }
   
@@ -47,19 +54,94 @@ const registerBuyerHandler = async (req, res) => {
           message: "Password must be at least 8 characters",
         });
       }
-      
+
+    // Hash the password before saving
     const hashedPassword = await bcrypt.hash(password, 10);
-    const buyer = await Buyer.insertMany({
+
+    // Save the new buyer to the database
+    const buyer = new Buyer({
       firstName,
       lastName,
-      email, 
+      email,
+      isVerified: false,
       password: hashedPassword,
-      confirmPassword: hashedPassword,
     });
 
-    return res.status(201).json({ message: 'Buyer registered successfully!', buyer});
+    await buyer.save;
+
+    // Generate a verification token
+    const token = jwt.sign({ buyerId: buyer._id }, process.env.JWT_SECRET_KEY, { expiresIn: '1h' });
+
+    // Send the verification email
+    sendVerificationEmail(buyer.email, token);
+
+    return res.status(201).json({ message: 'Buyer registered successfully! Please check your email to verify your account.' });
+
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+};
+
+// send verification email controller
+const sendVerificationEmail = async (email, token) => {
+  const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: process.env.SMTP_PORT,
+    secure: false, // Set to false for TLS (STARTTLS)
+    auth: {
+      user: process.env.SMTP_USER, // Your Gmail address
+      pass: process.env.SMTP_PASS, // The generated app password
+    },
+  });
+
+  const verificationUrl = `${process.env.BASE_URL}/verify-email/${token}`;
+
+  const mailOptions = {
+    from: process.env.SMTP_USER, // sender address
+    to: email, // recipient email
+    subject: 'Email Verification',
+    html: `
+      <h1>Welcome to Our Platform!</h1>
+      <p>Please click the link below to verify your email address:</p>
+      <a href="${verificationUrl}">Verify Email</a>
+    `,
+  };
+
+  try {
+    console.log('Attempting to send email to:', email);
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Verification email sent:', info);
+  } catch (error) {
+    console.error('Error sending email:', error);
+  }
+};
+
+
+
+
+
+const verifyEmailHandler = async (req, res) => {
+  const { token } = req.params;
+  
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+    const buyer = await Buyer.findById(decoded.buyerId);
+
+    if (!buyer) {
+      return res.status(404).json({ message: 'Buyer not found' });
+    }
+
+    if (buyer.isVerified) {
+      return res.status(400).json({ message: 'Buyer already verified' });
+    }
+
+    // Mark the buyer as verified
+    buyer.isVerified = true;
+    await buyer.save();
+
+    res.status(200).json({ message: 'Email successfully verified' });
+  } catch (error) {
+    res.status(400).json({ message: 'Invalid or expired token' });
   }
 };
 
@@ -310,4 +392,6 @@ module.exports = {
     createOrderHandler,
     updateOrderHandler,
     deleteOrderHandler,
+    verifyEmailHandler,
+    sendVerificationEmail,
 };

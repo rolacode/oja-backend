@@ -10,6 +10,8 @@ const {
   createOrderHandler,
   updateOrderHandler,
   deleteOrderHandler,
+  verifyEmailHandler,
+  sendVerificationEmail,
 } = require('../../controllers/v1/buyerController');
 
 const router = express.Router();
@@ -24,5 +26,7 @@ router.post('/dispute', createBuyerDisputeHandler);
 router.post('/order', createOrderHandler);
 router.put('/:id', updateOrderHandler);
 router.delete('/:id', deleteOrderHandler);
+router.get('/verify', verifyEmailHandler);
+router.post('/sendVerifyMail', sendVerificationEmail);
 
 module.exports = router;
