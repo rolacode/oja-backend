@@ -14,46 +14,58 @@ const jwt = require('jsonwebtoken');
 const registerBuyerHandler = async (req, res) => {
   try {
     const { firstName, lastName, email, password, confirmPassword } = req.body;
+
+    // Input validation
     if (typeof firstName !== "string") {
-        return res.status(400).json({
-          message: "First Name must be a string",
-        });
-      }
+      return res.status(400).json({
+        success: false,
+        message: "First Name must be a string",
+      });
+    }
 
-      if (typeof lastName !== "string") {
-        return res.status(400).json({
-          message: "Last Name must be a string",
-        });
-      }
-  
-      if (typeof email !== "string") {
-        return res.status(400).json({
-          message: "Email must be a string",
-        });
-      }
+    if (typeof lastName !== "string") {
+      return res.status(400).json({
+        success: false,
+        message: "Last Name must be a string",
+      });
+    }
 
-      const buyerExists = await Buyer.findOne({ email });
-      if (buyerExists) {
-        return res.status(400).json({
-          message: 'Buyer already exists',
-        });
-      }
-  
-      if (typeof password !== "string") {
-        return res.status(400).json({
-          message: "Password must be a string",
-        });
-      }
+    if (typeof email !== "string") {
+      return res.status(400).json({
+        success: false,
+        message: "Email must be a string",
+      });
+    }
 
-      if (password !== confirmPassword) {
-        return res.status(400).json({ message: "Passwords do not match" });
-      }
-  
-      if (password.length < 8) {
-        return res.status(400).json({
-          message: "Password must be at least 8 characters",
-        });
-      }
+    // Check if buyer already exists
+    const buyerExists = await Buyer.findOne({ email });
+    if (buyerExists) {
+      return res.status(400).json({
+        success: false,
+        message: 'Buyer already exists',
+      });
+    }
+
+    if (typeof password !== "string") {
+      return res.status(400).json({
+        success: false,
+        message: "Password must be a string",
+      });
+    }
+
+    if (password !== confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Passwords do not match"
+      });
+    }
+
+    if (password.length < 8) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must be at least 8 characters",
+      });
+    }
 
     // Hash the password before saving
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -63,24 +75,33 @@ const registerBuyerHandler = async (req, res) => {
       firstName,
       lastName,
       email,
-      isVerified: false,
+      isVerified: true, // Assuming the buyer is automatically verified
       password: hashedPassword,
     });
 
-    await buyer.save;
+    await buyer.save();
 
     // Generate a verification token
     const token = jwt.sign({ buyerId: buyer._id }, process.env.JWT_SECRET_KEY, { expiresIn: '1h' });
 
-    // Send the verification email
+    // Send the verification email (assuming `sendVerificationEmail` is a defined function)
     sendVerificationEmail(buyer.email, token);
 
-    return res.status(201).json({ message: 'Buyer registered successfully! Please check your email to verify your account.' });
+    // Send a successful response
+    return res.status(201).json({
+      success: true,
+      message: 'Buyer registered successfully! Please check your email to verify your account.',
+    });
 
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Error during registration:', error); // Log error details for debugging
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred during registration. Please try again later.',
+    });
   }
 };
+
 
 // send verification email controller
 const sendVerificationEmail = async (email, token) => {
@@ -247,20 +268,21 @@ const updateBuyerHandler = async (req, res) => {
 // @route POST /v1/Buyers/login
 // @access Public
 const loginBuyerHandler = async (req, res) => {
-    try {
-      const { email, password } = req.body;
-      const buyer = await Buyer.findOne({ email });
-      if (!buyer || !(await bcrypt.compare(password, buyer.password))) {
-        return res.status(401).json({ message: 'Invalid email or password' });
-      }
-  
-      const payload = { id: buyer.id, email: buyer.email};
-      const token = jwt.sign(payload, process.env.JWT_SECRET_KEY, { expiresIn: '7d' });
-      return res.json({ message: 'Login successful', token });
-    } catch (error) {
-      res.status(400).json({ error: error.message });
+  try {
+    const { email, password } = req.body;
+    const buyer = await Buyer.findOne({ email });
+    if (!buyer || !(await bcrypt.compare(password, buyer.password))) {
+      return res.status(401).json({ message: 'Invalid email or password', success: false });
     }
-  };
+
+    const payload = { id: buyer.id, email: buyer.email};
+    const token = jwt.sign(payload, process.env.JWT_SECRET_KEY, { expiresIn: '7d' });
+    return res.json({ message: 'Login successful', success: true, token });  // Add success: true
+  } catch (error) {
+    res.status(400).json({ error: error.message, success: false });
+  }
+};
+
 
 // Search Vendors
 const searchVendors1Handler = async (req, res) => {
