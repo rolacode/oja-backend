@@ -1,5 +1,6 @@
 const express = require('express');
 const mongoose = require('mongoose');
+const nodemailer = require('nodemailer');
 const Order = require('../../models/Order');
 const Product = require('../../models/Product');
 const Category = require('../../models/Category');
@@ -22,32 +23,37 @@ const createVendorHandler = async (req, res) => {
   try {
     const { businessName, email, password, confirmPassword, location, nin } = req.body;
 
+    // Validate if businessName is a string
     if (typeof businessName !== "string") {
       return res.status(400).json({ message: "Business name must be a string" });
     }
 
+    // Validate if email is a string and matches email format
     if (typeof email !== "string") {
       return res.status(400).json({ message: "Email must be a string" });
     }
-
     if (!/\S+@\S+\.\S+/.test(email)) {
       return res.status(400).json({ message: "Email is invalid" });
     }
 
+    // Validate if password is a string
     if (typeof password !== "string") {
       return res.status(400).json({
         message: "Password must be a string",
       });
     }
 
+    // Validate if password and confirmPassword match
     if (password !== confirmPassword) {
       return res.status(400).json({ message: "Passwords do not match" });
     }
 
+    // Validate if password is at least 8 characters long
     if (password.length < 8) {
       return res.status(400).json({ message: "Password must be at least 8 characters" });
     }
 
+    // Validate location (coordinates as array)
     if (
       !Array.isArray(location?.coordinates) ||
       location.coordinates.length !== 2 ||
@@ -56,12 +62,16 @@ const createVendorHandler = async (req, res) => {
       return res.status(400).json({ message: "Location must be an array with [latitude, longitude]" });
     }
 
+    // Validate NIN (must be exactly 11 digits)
     if (typeof nin !== "string" || !/^\d{11}$/.test(nin)) {
       return res.status(400).json({ message: "NIN must be exactly 11 digits" });
     }
 
+    // Hash the password before storing it in the database
     const hashedPassword = await bcrypt.hash(password, 10);
-    const vendor = await Vendor1.create({
+
+    // Create a new vendor document
+    const vendor = new Vendor1({
       businessName,
       email,
       password: hashedPassword,
@@ -72,12 +82,66 @@ const createVendorHandler = async (req, res) => {
       nin,
     });
 
-    return res.status(201).json(vendor);
+    // Save the vendor in the database
+    await vendor.save();
+
+    // Generate a verification token
+    const token = jwt.sign({ vendorId: vendor._id }, process.env.JWT_SECRET_KEY, { expiresIn: '1h' });
+
+    // Send the verification email (assuming `sendVerificationEmail` is a defined function)
+    sendVerificationEmail(vendor.email, token);
+
+    // Send a successful response
+    return res.status(201).json({
+      success: true,
+      message: 'Vendor registered successfully! Please check your email to verify your account.',
+    });
 
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Error during registration:', error); 
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred during registration. Please try again later.',
+    });
   }
 };
+
+
+
+// send verification email controller
+const sendVerificationEmail = async (email, token) => {
+  const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: process.env.SMTP_PORT,
+    secure: false, // Set to false for TLS (STARTTLS)
+    auth: {
+      user: process.env.SMTP_USER, // Your Gmail address
+      pass: process.env.SMTP_PASS, // The generated app password
+    },
+  });
+
+  const verificationUrl = `${process.env.BASE_URL}/verify-email/${token}`;
+
+  const mailOptions = {
+    from: process.env.SMTP_USER, // sender address
+    to: email, // recipient email
+    subject: 'Email Verification',
+    html: `
+      <h1>Welcome to Our Platform!</h1>
+      <p>Please click the link below to verify your email address:</p>
+      <a href="${verificationUrl}">Verify Email</a>
+    `,
+  };
+
+  try {
+    console.log('Attempting to send email to:', email);
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Verification email sent:', info);
+  } catch (error) {
+    console.error('Error sending email:', error);
+  }
+};
+
 
 // @desc Retrieve User
 // @route GET /v1/users/
