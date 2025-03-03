@@ -284,13 +284,58 @@ const deleteProductHandler = async (req, res) => {
 // @route POST /v1/vendors/:vendorId
 // @access Private
 const createProductHandler = async (req, res) => {
-    const { name, description, price, images, vendorId, categoryId, } = req.body;
-    try {
-      const product = await Product.create({ name, description, price, images, vendorId, categoryId });
-      res.status(201).json(product);
-    } catch (error) {
-      res.status(500).json({ error: error.message });
+  try {
+    console.log("🔹 Received Request Body:", req.body);
+    console.log("🔹 Uploaded File:", req.file);
+
+    if (!req.file) {
+      console.error("❌ Missing image file");
+      return res.status(400).json({ success: false, error: "Image file is required" });
     }
+
+    const { name, description, price, vendorId, categoryId } = req.body;
+
+    if (!name || !description || !price || !vendorId || !categoryId) {
+      console.error("❌ Missing required fields:", { name, description, price, vendorId, categoryId });
+      return res.status(400).json({ success: false, error: "All fields are required" });
+    }
+
+    // Validate ObjectId for vendorId and categoryId
+    if (!mongoose.Types.ObjectId.isValid(vendorId) || !mongoose.Types.ObjectId.isValid(categoryId)) {
+      console.error("❌ Invalid MongoDB ObjectId:", { vendorId, categoryId });
+      return res.status(400).json({ success: false, error: "Invalid vendorId or categoryId format" });
+    }
+
+    const parsedPrice = parseFloat(price);
+    if (isNaN(parsedPrice) || parsedPrice <= 0) {
+      console.error("❌ Invalid price:", price);
+      return res.status(400).json({ success: false, error: "Invalid price value" });
+    }
+
+    const product = new Product({
+      name,
+      description,
+      price: parsedPrice,
+      vendorId: new mongoose.Types.ObjectId(vendorId),
+      categoryId: new mongoose.Types.ObjectId(categoryId),
+      image: `${req.protocol}://${req.get("host")}/upload/${req.file.filename}`,
+    });
+
+    console.log("🔹 Saving product:", product);
+    await product.save();
+
+    console.log("✅ Product Created Successfully:", product);
+    return res.status(201).json({ success: true, product });
+
+  } catch (error) {
+    console.error("❌ API Error:", error);
+
+    // Ensure a proper error response is returned
+    return res.status(500).json({
+      success: false,
+      error: error.message || "Failed to create product due to an unexpected error.",
+    });
+  }
 };
 
 // @desc Fetch All Products with Pagination and Filters
@@ -298,32 +343,55 @@ const createProductHandler = async (req, res) => {
 // @access Public
 const getAllProductsHandler = async (req, res) => {
   try {
+    console.log("Received Query Params:", req.query);
+
     const { page = 1, limit = 10, category, vendor } = req.query;
+    const pageNum = parseInt(page) || 1;
+    const limitNum = parseInt(limit) || 10;
+    const skip = (pageNum - 1) * limitNum;
+
+    if (category && !mongoose.Types.ObjectId.isValid(category)) {
+      return res.status(400).json({ error: "Invalid category ID" });
+    }
+    if (vendor && !mongoose.Types.ObjectId.isValid(vendor)) {
+      return res.status(400).json({ error: "Invalid vendor ID" });
+    }
 
     const filter = {};
     if (category) filter.categoryId = category;
     if (vendor) filter.vendorId = vendor;
 
-    const skip = (page - 1) * limit;
+    console.log("Final Filter Object:", filter);
 
     const products = await Product.find(filter)
-      .populate('vendorId', 'businessName') // Populate vendor details
-      .populate('categoryId', 'name') // Populate category details
+      .populate("vendorId", "businessName")
+      .populate("categoryId", "name")
       .skip(skip)
-      .limit(parseInt(limit));
+      .limit(limitNum)
+      .lean(); // Convert Mongoose documents to plain objects
+
+    // Ensure full image URLs
+    const BASE_URL = "http://localhost:5000";
+    products.forEach((product) => {
+      if (product.image) {
+        product.image = product.image.startsWith("http") ? product.image : `${BASE_URL}/upload/${product.image}`;
+      }
+    });
+
+    console.log("Products Found:", products);
 
     const total = await Product.countDocuments(filter);
 
-    // Ensure consistent response format
     res.status(200).json({
       total,
-      page: parseInt(page),
-      limit: parseInt(limit),
-      totalPages: Math.ceil(total / limit),
-      products, // Ensure this is an array
+      page: pageNum,
+      limit: limitNum,
+      totalPages: Math.ceil(total / limitNum),
+      products,
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("Error in getAllProductsHandler:", error.stack);
+    res.status(500).json({ error: error.message, stack: error.stack });
   }
 };
 

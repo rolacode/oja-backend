@@ -15,11 +15,12 @@ const {
     analyticBuyersHandler,
     getAllOrdersHandler
 } = require('../../controllers/v1/vendorController');
+const upload = require('../../middleware/uploadMiddleware');
 const authenticateVendor = require('../../middleware/auth1');
 
 const router = express.Router();
 
-router.post('/createProduct', authenticateVendor, createProductHandler);
+router.post('/createProduct', upload.single("image"), authenticateVendor, createProductHandler);
 router.get('/search', getProductsByNameHandler);
 router.get('/product', getAllProductsHandler)
 router.get('/:id', authenticateVendor, getSalesHandler);

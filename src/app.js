@@ -1,5 +1,6 @@
-const express = require('express');
+const express = require('express'); 
 const bodyParser = require('body-parser');
+const path = require('path');
 const cors = require('cors');
 const adminRoutes = require('../routes/v1/adminRoutes');
 const buyerRoutes = require('../routes/v1/buyerRoutes');
@@ -18,18 +19,16 @@ app.use(bodyParser.json());
 connect1DB();
 
 //middleware
-// const corsOptions = {
-//     origin: 'http://localhost:3000',
-//     methods: ['GET', 'POST', 'PUT', 'DELETE'],
-//     Credential: true,
-// }
-// app.use(cors(corsOptions));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
 app.use(cors({
     origin: 'http://localhost:3000', // Frontend URL
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true
   }));
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // API Routes
 app.use('/v1/admin', adminRoutes);
