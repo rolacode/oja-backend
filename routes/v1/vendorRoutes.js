@@ -20,20 +20,29 @@ const authenticateVendor = require('../../middleware/auth1');
 
 const router = express.Router();
 
+// ✅ Serve uploads before other routes
+router.use('/upload', express.static("uploads"));
+
+// Product routes
 router.post('/createProduct', upload.single("image"), authenticateVendor, createProductHandler);
 router.get('/search', getProductsByNameHandler);
-router.get('/product', getAllProductsHandler)
-router.get('/:id', authenticateVendor, getSalesHandler);
-router.get('/earning', getEarningsHandler);
-router.delete('/:id', authenticateVendor, deleteProductHandler);
-router.get('/:productId',authenticateVendor, getProductHandler);
-router.get('/:orderId',authenticateVendor, getOrderHandler);
-router.get('', authenticateVendor, getBuyerHandler);
+router.get('/product', getAllProductsHandler);
+
+// Order routes
 router.get('/order', authenticateVendor, getAllOrdersHandler);
-//vendors operation
+router.get('/earning', getEarningsHandler);
+
+// Vendors
 router.post('', createVendorHandler);
-router.put('/:id', updateVendorHandler);
 router.post('/login', loginVendorHandler);
+router.put('/:id', updateVendorHandler);
 router.get('/analytics', authenticateVendor, analyticBuyersHandler);
+
+// **Move Dynamic Routes to the Bottom**
+router.get('/sales/:id', authenticateVendor, getSalesHandler);
+router.get('/product/:productId', authenticateVendor, getProductHandler);
+router.get('/order/:orderId', authenticateVendor, getOrderHandler);
+router.get('/buyer', authenticateVendor, getBuyerHandler);
+router.delete('/product/:id', authenticateVendor, deleteProductHandler);
 
 module.exports = router;

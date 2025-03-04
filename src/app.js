@@ -19,14 +19,20 @@ app.use(bodyParser.json());
 connect1DB();
 
 //middleware
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use("/upload", express.static(path.join(__dirname, "../uploads")));
 
-app.use(cors({
-    origin: 'http://localhost:3000', // Frontend URL
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true
-  }));
+app.use(
+  cors({
+    origin: "http://localhost:3000", // Allow frontend
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+  })
+);
+
+console.log("Serving static files from:", path.join(__dirname, "uploads"));
+
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
