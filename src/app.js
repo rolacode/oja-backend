@@ -30,8 +30,6 @@ app.use(
   })
 );
 
-console.log("Serving static files from:", path.join(__dirname, "uploads"));
-
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

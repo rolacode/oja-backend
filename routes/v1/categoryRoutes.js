@@ -10,7 +10,7 @@ const validateToken = require('../../middleware/auth');
 
 const router = express.Router();
 
-router.post('', validateToken, createCategoryHandler);
+router.post('/create', createCategoryHandler);
 router.get('', getCategoriesHandler);
 router.get('/:id', getCategoryHandler);
 router.patch('/:id', validateToken, updateCategoryHandler);
